@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Insider Threat Detection via Log Correlation System - Cyber Security SIEM Dashboard">
+    <title>CORREL-SIEM // Insider Threat Detection & Log Correlation</title>
+    <!-- Modern Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body class="cyber-theme">
+    <!-- Background Grid Effect -->
+    <div class="grid-backdrop"></div>
+    <div class="radial-glow"></div>
+
+    <!-- Main Application Container -->
+    <div class="app-layout">
+        
+        <!-- Top Navigation Bar -->
+        <header class="top-nav glass-panel">
+            <div class="brand-zone">
+                <div class="brand-icon">
+                    <div class="radar-pulse"></div>
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        <circle cx="12" cy="11" r="3"/>
+                    </svg>
+                </div>
+                <div class="brand-titles">
+                    <div class="brand-name">CORREL<span class="highlight-cyan">-SIEM</span></div>
+                    <div class="brand-sub">Insider Threat Detection via Log Correlation</div>
+                </div>
+            </div>
+
+            <!-- Simulation Controls Bar -->
+            <div class="sim-controls-bar">
+                <div class="sim-status-chip" id="simStatusChip">
+                    <span class="status-indicator-dot" id="statusDot"></span>
+                    <span class="status-text" id="statusText">PAUSED</span>
+                </div>
+
+                <div class="control-btn-group">
+                    <button class="btn btn-primary" id="btnPlayPause" title="Start/Pause Continuous Ingestion">
+                        <svg id="playIcon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                        <span id="playPauseLabel">Start Stream</span>
+                    </button>
+                    <button class="btn btn-outline" id="btnReset" title="Reset Simulation and Logs">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                        <span>Reset</span>
+                    </button>
+                </div>
+
+                <div class="speed-select-wrap">
+                    <label for="speedSelect">Speed:</label>
+                    <select id="speedSelect" class="form-select-sm">
+                        <option value="1.0" selected>1.0x (Normal)</option>
+                        <option value="2.0">2.0x (Fast)</option>
+                        <option value="5.0">5.0x (Turbo)</option>
+                        <option value="10.0">10.0x (Max)</option>
+                    </select>
+                </div>
+
+                <div class="scenario-trigger-wrap">
+                    <select id="scenarioSelect" class="form-select-sm">
+                        <option value="" disabled selected>⚡ Trigger Scenario</option>
+                        <option value="exfiltration">Departing Data Exfiltrator (ITD-01/03)</option>
+                        <option value="rogue_admin">Rogue Admin & Log Tampering (ITD-02)</option>
+                        <option value="impossible_travel">Impossible Travel & Takeover (ITD-04)</option>
+                        <option value="snooping">Cross-Dept IP Snooping (ITD-05)</option>
+                        <option value="normal_batch">Normal Enterprise Traffic (Benign)</option>
+                    </select>
+                    <button class="btn btn-accent" id="btnTriggerScenario">Simulate</button>
+                </div>
+
+                <div class="aux-actions">
+                    <button class="btn btn-glass" id="btnOpenInjectModal" title="Inject Custom Log Event">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                        <span>Craft Log</span>
+                    </button>
+                    <button class="btn btn-glass" id="btnViewRulesModal" title="View Detection Rules">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                        <span>Rules</span>
+                    </button>
+                    <button class="btn btn-glass" id="btnExportReport" title="Export Forensic Incident Report">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        <span>Report</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- KPI Metrics Grid -->
+        <section class="kpi-grid">
+            <div class="kpi-card glass-panel threat-kpi" id="threatKpiCard">
+                <div class="kpi-meta">
+                    <span class="kpi-title">DEFENSE THREAT LEVEL</span>
+                    <span class="kpi-badge pulse" id="threatLevelBadge">NORMAL</span>
+                </div>
+                <div class="kpi-value" id="kpiThreatLevel">NORMAL</div>
+                <div class="kpi-subtext" id="kpiThreatSub">Continuous Multi-Source Correlation Active</div>
+            </div>
+
+            <div class="kpi-card glass-panel">
+                <div class="kpi-meta">
+                    <span class="kpi-title">TOTAL LOGS INGESTED</span>
+                    <span class="kpi-icon-pill">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    </span>
+                </div>
+                <div class="kpi-value text-cyan" id="kpiTotalLogs">0</div>
+                <div class="kpi-subtext">Auth, File, Cmd, Badge, HR</div>
+            </div>
+
+            <div class="kpi-card glass-panel">
+                <div class="kpi-meta">
+                    <span class="kpi-title">CORRELATED INCIDENTS</span>
+                    <span class="kpi-icon-pill alert-pill">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 22 22 22 12 2"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    </span>
+                </div>
+                <div class="kpi-value text-crimson" id="kpiIncidents">0</div>
+                <div class="kpi-subtext" id="kpiAnomaliesCount">0 Correlated Micro-Anomalies</div>
+            </div>
+
+            <div class="kpi-card glass-panel">
+                <div class="kpi-meta">
+                    <span class="kpi-title">HIGH-RISK INSIDERS</span>
+                    <span class="kpi-icon-pill">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </span>
+                </div>
+                <div class="kpi-value text-amber" id="kpiHighRiskUsers">0</div>
+                <div class="kpi-subtext" id="kpiMonitoredIdentities">Across 6 Monitored Personas</div>
+            </div>
+        </section>
+
+        <!-- Main SIEM Workspace Grid -->
+        <main class="main-dashboard-grid">
+            
+            <!-- Left & Center Column: Analytics & Incident Hub -->
+            <div class="primary-col">
+                
+                <!-- Visual Analytics Row (Charts) -->
+                <div class="charts-row">
+                    <div class="chart-card glass-panel">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                                <span>Log Ingestion Stream by Source</span>
+                            </div>
+                            <span class="badge-source live-pulse">LIVE</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="sourceStreamChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card glass-panel">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
+                                <span>Threat Severity Breakdown</span>
+                            </div>
+                            <span class="text-muted text-xs" id="totalSeverityCount">0 Total</span>
+                        </div>
+                        <div class="chart-container doughnut-wrap">
+                            <canvas id="severityChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Correlated Threat Incidents Stream (Core Showcase) -->
+                <div class="incidents-card glass-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            <span>Correlated Insider Threat Incidents</span>
+                            <span class="badge-counter" id="incidentsBadge">0</span>
+                        </div>
+                        <div class="filter-btn-group">
+                            <button class="filter-pill active" data-filter="ALL">All</button>
+                            <button class="filter-pill" data-filter="CRITICAL">Critical</button>
+                            <button class="filter-pill" data-filter="HIGH">High</button>
+                            <button class="filter-pill" data-filter="MEDIUM">Medium</button>
+                        </div>
+                    </div>
+
+                    <div class="incidents-list-container" id="incidentsList">
+                        <!-- Populated by JavaScript -->
+                        <div class="empty-state">
+                            <div class="empty-radar"></div>
+                            <p class="empty-title">No Threats Detected Yet</p>
+                            <p class="empty-desc">Start the stream or trigger a scenario from the control bar above to simulate multi-source log correlation.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Risk Leaderboard & Raw Terminal Log Stream -->
+            <div class="sidebar-col">
+                
+                <!-- Suspicious Insiders Leaderboard -->
+                <div class="glass-panel user-risk-card">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+                            <span>Insider Risk Leaderboard</span>
+                        </div>
+                        <span class="text-xs text-muted">Composite Scoring</span>
+                    </div>
+                    <div class="user-risk-list" id="userRiskList">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
+                <!-- Raw SIEM Log Console (Monospace Terminal) -->
+                <div class="glass-panel console-card">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                            <span>Raw Log Stream</span>
+                        </div>
+                        <div class="console-tools">
+                            <select id="logSourceFilter" class="form-select-xs">
+                                <option value="">All Sources</option>
+                                <option value="Authentication">Auth</option>
+                                <option value="File / DLP">File/DLP</option>
+                                <option value="Endpoint / Auditd">Auditd</option>
+                                <option value="Physical Badge">Badge</option>
+                                <option value="HR Context">HR</option>
+                            </select>
+                            <label class="toggle-switch-label" title="Toggle Auto-Scroll">
+                                <input type="checkbox" id="chkAutoScroll" checked>
+                                <span class="toggle-text">Scroll</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="terminal-body" id="rawLogTerminal">
+                        <div class="terminal-entry terminal-system">
+                            <span class="term-time">[SYS]</span>
+                            <span class="term-msg">SIEM Log Ingestion pipeline initialized. Ready to correlate events.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL 1: Forensic Incident Investigation & Evidence Trail -->
+    <div class="modal-overlay" id="incidentModal">
+        <div class="modal-window glass-panel-modal">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span class="modal-severity-badge" id="modalSeverityBadge">CRITICAL</span>
+                    <h3 class="modal-title" id="modalIncidentTitle">Incident Details</h3>
+                </div>
+                <button class="modal-close-btn" id="btnCloseIncidentModal">&times;</button>
+            </div>
+            <div class="modal-body" id="modalIncidentBody">
+                <!-- Dynamically populated with correlation evidence steps -->
+            </div>
+            <div class="modal-footer">
+                <div class="status-action-wrap">
+                    <span>Incident Status:</span>
+                    <select id="modalStatusSelect" class="form-select-sm">
+                        <option value="OPEN">OPEN</option>
+                        <option value="INVESTIGATING">INVESTIGATING</option>
+                        <option value="CONTAINED">CONTAINED</option>
+                        <option value="FALSE_POSITIVE">FALSE_POSITIVE</option>
+                    </select>
+                    <button class="btn btn-outline-sm" id="btnUpdateStatus">Update</button>
+                </div>
+                <button class="btn btn-primary-sm" id="btnCloseIncidentModalBtn">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: Custom Log Event Injector (For Evaluation & Demo) -->
+    <div class="modal-overlay" id="injectModal">
+        <div class="modal-window glass-panel-modal modal-md">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <h3 class="modal-title">Craft & Inject Custom Log</h3>
+                </div>
+                <button class="modal-close-btn" id="btnCloseInjectModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-desc">Inject simulated logs to test how the correlation engine links multi-source access events in real-time.</p>
+                <form id="customLogForm" class="modal-form">
+                    <div class="form-row">
+                        <div class="form-group col-6">
+                            <label for="injectUser">Target Persona / User</label>
+                            <select id="injectUser" class="form-control" required>
+                                <option value="sarah.chen">Sarah Chen (Lead DevOps Architect)</option>
+                                <option value="marcus.vance">Marcus Vance (Sr. Financial Analyst)</option>
+                                <option value="elena.rostova">Elena Rostova (Database Administrator)</option>
+                                <option value="alex.morgan">Alex Morgan (Enterprise Account Exec)</option>
+                                <option value="david.miller">David Miller (Software Engineer)</option>
+                                <option value="aisha.patel">Aisha Patel (People Operations)</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-6">
+                            <label for="injectSource">Log Source</label>
+                            <select id="injectSource" class="form-control" required>
+                                <option value="Authentication">Authentication (VPN / SSO / SSH)</option>
+                                <option value="File / DLP">File / DLP Access</option>
+                                <option value="Endpoint / Auditd">Endpoint / Auditd Command</option>
+                                <option value="Physical Badge">Physical Badge Access</option>
+                                <option value="HR Context">HR Context Status</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="injectAction">Action Identifier</label>
+                        <input type="text" id="injectAction" class="form-control" placeholder="e.g. VPN_LOGIN, CMD_EXEC, FILE_DOWNLOAD, AUDIT_TAMPERING" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="injectParam1" id="lblParam1">Command / File / Gateway</label>
+                        <input type="text" id="injectParam1" class="form-control" placeholder="e.g. auditctl -D, Confidential_Payroll.xlsx, vpn-secure.corp">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-6">
+                            <label for="injectParam2" id="lblParam2">Sensitivity / Elevation</label>
+                            <select id="injectParam2" class="form-control">
+                                <option value="NORMAL">Standard / Normal</option>
+                                <option value="ELEVATED">Elevated (sudo / root)</option>
+                                <option value="CONFIDENTIAL">Confidential / Restricted</option>
+                                <option value="OFF_HOURS">Off-Hours (Night Access)</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-6">
+                            <label for="injectSize">File Size (MB) / Location</label>
+                            <input type="text" id="injectSize" class="form-control" placeholder="e.g. 450 MB or Frankfurt, DE">
+                        </div>
+                    </div>
+
+                    <div class="alert-box" id="injectResultBox" style="display:none;"></div>
+
+                    <div class="modal-btn-row">
+                        <button type="submit" class="btn btn-primary" id="btnSubmitInject">Inject Log into SIEM</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: MITRE ATT&CK & Rules Reference -->
+    <div class="modal-overlay" id="rulesModal">
+        <div class="modal-window glass-panel-modal modal-lg">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <h3 class="modal-title">Active SIEM Correlation Rules & MITRE Mapping</h3>
+                </div>
+                <button class="modal-close-btn" id="btnCloseRulesModal">&times;</button>
+            </div>
+            <div class="modal-body" id="rulesModalBody">
+                <div class="rules-table-container">
+                    <table class="rules-table">
+                        <thead>
+                            <tr>
+                                <th>Rule ID</th>
+                                <th>Threat Pattern Name</th>
+                                <th>Severity</th>
+                                <th>MITRE ATT&CK</th>
+                                <th>Sliding Window</th>
+                                <th>Base Score</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rulesTableBody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container for Real-Time Threat Alerts -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Application Scripts -->
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/charts.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>
